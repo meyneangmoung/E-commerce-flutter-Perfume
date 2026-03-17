@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ecommerce/screens/intro/getstartpage.dart';
 import 'package:ecommerce/screens/home/homepage.dart';
 
-List<Product> globalWishlist = [];
 
 void main() {
   runApp(const PerfumeApp());

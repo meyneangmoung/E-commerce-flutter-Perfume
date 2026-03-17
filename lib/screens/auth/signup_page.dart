@@ -50,7 +50,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     // We use pushAndRemoveUntil so the user can't "go back" to the signup screen
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const Homepage()),
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
       (route) => false,
     );
   }
