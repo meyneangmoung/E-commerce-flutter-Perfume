@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_braintree/flutter_braintree.dart';
 
 void main() {
   runApp(
@@ -14,19 +15,15 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  // State Variables
-  int _selectedPayment = 0;
+  // --- STATE ---
+  int _selectedPayment = 0; // 0: Credit Card, 1: PayPal, 2: COD
   String _shippingAddress = "123 Flutter St, Phnom Penh, Cambodia";
   String _phoneNumber = "+855 12 345 678";
 
-  // --- LOGIC: EDIT ADDRESS MODAL ---
+  // --- EDIT ADDRESS MODAL ---
   void _showEditAddressSheet() {
-    TextEditingController addressController = TextEditingController(
-      text: _shippingAddress,
-    );
-    TextEditingController phoneController = TextEditingController(
-      text: _phoneNumber,
-    );
+    TextEditingController addressController = TextEditingController(text: _shippingAddress);
+    TextEditingController phoneController = TextEditingController(text: _phoneNumber);
 
     showModalBottomSheet(
       context: context,
@@ -45,56 +42,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Edit Delivery Info",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            const Text("Edit Delivery Info", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
-
-            // Address Input
-            const Text(
-              "Address",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            const Text("Address", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            TextField(
-              controller: addressController,
-              decoration: InputDecoration(
-                hintText: "Enter address",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-
+            TextField(controller: addressController, decoration: InputDecoration(
+              hintText: "Enter address",
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            )),
             const SizedBox(height: 15),
-
-            // Phone Input
-            const Text(
-              "Phone Number",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            const Text("Phone Number", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                hintText: "Enter phone number",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-
+            TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: InputDecoration(
+              hintText: "Enter phone number",
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            )),
             const SizedBox(height: 25),
-
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2C2C2C),
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2C2C2C)),
                 onPressed: () {
                   setState(() {
                     _shippingAddress = addressController.text;
@@ -102,10 +70,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   });
                   Navigator.pop(context);
                 },
-                child: const Text(
-                  "Save Changes",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+                child: const Text("Save Changes", style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
             ),
           ],
@@ -114,15 +79,46 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  // --- PAYPAL PAYMENT LOGIC ---
+  Future<void> _payWithPayPal() async {
+    try {
+      var request = BraintreePayPalRequest(
+        amount: '170.00', // total order amount
+        currencyCode: 'USD',
+        displayName: 'My Shop',
+      );
+     //-----------------------//-----------------------------------
+      // Replace with your sandbox tokenization key from Braintree
+      final result = await Braintree.requestPaypalNonce(
+        'sandbox_yourTokenizationKeyHere', 
+        request,
+      );
+     //-----------------------//-----------------------------------
+
+      if (result != null) {
+        // Payment succeeded
+        print('PayPal Payment Successful! Nonce: ${result.nonce}');
+        _showSuccessDialog(context);
+      } else {
+        // Payment cancelled
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PayPal Payment Cancelled')),
+        );
+      }
+    } catch (e) {
+      print('PayPal Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PayPal Payment Failed')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          "Checkout",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Checkout", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -137,40 +133,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
           children: [
             _buildSectionTitle("Shipping Address"),
             _buildAddressCard(),
-
             const SizedBox(height: 25),
-
             _buildSectionTitle("Payment Method"),
             _buildPaymentOption(0, "Credit Card", Icons.credit_card),
             _buildPaymentOption(1, "PayPal", Icons.account_balance_wallet),
             _buildPaymentOption(2, "Cash on Delivery", Icons.local_shipping),
-
             const SizedBox(height: 25),
-
             _buildSectionTitle("Order Summary"),
             _buildOrderSummary(),
-
             const SizedBox(height: 30),
-
             // PLACE ORDER BUTTON
             SizedBox(
               width: double.infinity,
               height: 60,
               child: ElevatedButton(
-                onPressed: () => _showSuccessDialog(context),
+                onPressed: () {
+                  if (_selectedPayment == 1) {
+                    // PayPal
+                    _payWithPayPal();
+                  } else {
+                    // Other methods
+                    _showSuccessDialog(context);
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2C2C2C),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 ),
                 child: const Text(
                   "Place Order",
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -181,14 +173,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   // --- UI COMPONENTS ---
-
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
+      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -211,20 +199,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Delivery Details",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
+                  const Text("Delivery Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 4),
-                  Text(
-                    _shippingAddress,
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
+                  Text(_shippingAddress, style: const TextStyle(color: Colors.grey, fontSize: 13)),
                   const SizedBox(height: 2),
-                  Text(
-                    _phoneNumber,
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
+                  Text(_phoneNumber, style: const TextStyle(color: Colors.grey, fontSize: 13)),
                 ],
               ),
             ),
@@ -245,26 +224,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF2C2C2C) : Colors.grey.shade200,
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: isSelected ? const Color(0xFF2C2C2C) : Colors.grey.shade200, width: isSelected ? 2 : 1),
         ),
         child: Row(
           children: [
             Icon(icon, color: isSelected ? Colors.black : Colors.grey),
             const SizedBox(width: 15),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              ),
-            ),
+            Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
             const Spacer(),
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: isSelected ? const Color(0xFF2C2C2C) : Colors.grey,
-            ),
+            Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: isSelected ? const Color(0xFF2C2C2C) : Colors.grey),
           ],
         ),
       ),
@@ -284,10 +252,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           _summaryRow("Subtotal", "\$150.00"),
           _summaryRow("Shipping Fee", "\$5.00"),
           _summaryRow("Tax (10%)", "\$15.00"),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: Divider(),
-          ),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Divider()),
           _summaryRow("Total", "\$170.00", isTotal: true),
         ],
       ),
@@ -300,21 +265,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: isTotal ? Colors.black : Colors.grey,
-              fontSize: isTotal ? 18 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isTotal ? 18 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
+          Text(label, style: TextStyle(color: isTotal ? Colors.black : Colors.grey, fontSize: isTotal ? 18 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal)),
+          Text(value, style: TextStyle(fontSize: isTotal ? 18 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
     );
@@ -331,38 +283,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
           children: [
             const Icon(Icons.check_circle, color: Colors.green, size: 80),
             const SizedBox(height: 20),
-            const Text(
-              "Order Successful!",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+            const Text("Order Successful!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            const Text(
-              "Your order has been placed.\nThank you for shopping!",
-              textAlign: TextAlign.center,
-            ),
+            const Text("Your order has been placed.\nThank you for shopping!", textAlign: TextAlign.center),
             const SizedBox(height: 25),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/home', 
-                    (route) =>
-                        false, 
-                  );
+                  Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2C2C2C), 
+                  backgroundColor: const Color(0xFF2C2C2C),
                   foregroundColor: Colors.white,
-                  shape:
-                      const StadiumBorder(),
+                  shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 0,
                 ),
-                child: const Text(
-                  "Continue Shopping",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                child: const Text("Continue Shopping", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
             ),
           ],

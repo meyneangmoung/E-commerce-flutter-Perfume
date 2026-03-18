@@ -1,79 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:ecommerce/service/auth_service.dart';
+import 'package:ecommerce/screens/auth/signup_page.dart';
 import 'package:ecommerce/screens/home/homepage.dart';
 
 void main() {
-  runApp(const SigninPage());
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: LoginPage(),
+    ),
+  );
 }
 
-class SigninPage extends StatelessWidget {
-  const SigninPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final AuthService _authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  void showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
     );
   }
-}
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
-
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  
-  bool _rememberMe = false;
-  bool _isLoading = false; // Track loading state
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  // Helper to build Social Buttons
+  Widget _socialButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(50),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Icon(icon, color: color, size: 28),
+      ),
+    );
   }
 
-  // --- LOGIN LOGIC ---
-  void _handleLogin() async {
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
+  Future<void> handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
 
-    // Basic Validation
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
+      showMessage("Please fill in all fields");
       return;
     }
 
-    setState(() => _isLoading = true);
-
-    // Simulate network delay for a better user experience
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (email == "xuneang123@gmail.com" && password == "0661") {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        Navigator.pushReplacement( 
+    try {
+      final success = await _authService.login(email, password);
+      if (success != null) {
+        // Navigate to HomePage on successful login
+        if (!mounted) return;
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
+      } else {
+        showMessage("Invalid email or password");
       }
-    } else {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid email or password. Please try again.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+    } catch (e) {
+      showMessage("Login failed: $e");
     }
   }
 
@@ -83,136 +84,126 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Form(
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 80),
-                const Text(
-                  'Log into',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
+                const SizedBox(height: 60),
+                const Center(
+                  child: Icon(Icons.shopping_bag_outlined,
+                      size: 80, color: Colors.blueAccent),
                 ),
-                const Text(
-                  'your account',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
-                ),
-
-                const SizedBox(height: 50),
-
-                // Email Field
-                _buildLabel('Email'),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: _inputDecoration('Enter your email'),
-                ),
-
-                const SizedBox(height: 25),
-
-                // Password Field
-                _buildLabel('Password'),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: _inputDecoration('Enter your password'),
-                ),
-
-                const SizedBox(height: 15),
-
-                // Remember Me & Forget Password
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: Checkbox(
-                            value: _rememberMe,
-                            activeColor: const Color(0xFF2C2C2C),
-                            onChanged: (value) {
-                              setState(() => _rememberMe = value ?? false);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Remember me'),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ForgetPassword()),
-                      ),
-                      child: const Text(
-                        'Forget?',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
-
+                const SizedBox(height: 30),
+                const Text("Welcome Back",
+                    style:
+                        TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                const Text("Sign in to continue your shopping",
+                    style: TextStyle(color: Colors.grey, fontSize: 16)),
                 const SizedBox(height: 30),
 
-                // SIGN IN BUTTON
+                // Email & Password Fields
+                TextFormField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: const Text("Forgot Password?"),
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Main Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin, // Disable while loading
+                    onPressed: handleLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2C2C),
+                      backgroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: _isLoading 
-                      ? const SizedBox(
-                          height: 20, 
-                          width: 20, 
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Sign In',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                    child: const Text("Login",
+                        style:
+                            TextStyle(color: Colors.white, fontSize: 16)),
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
-                // Social Media Row
+                // --- SOCIAL LOGIN SECTION START ---
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text("Or connect with",
+                          style: TextStyle(color: Colors.grey)),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                  ],
+                ),
+                const SizedBox(height: 25),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _SocialButton(onTap: () {}, child: Image.asset('assets/apple.png', width: 24)),
+                    _socialButton(
+                      icon: Icons.g_mobiledata_rounded,
+                      color: Colors.red,
+                      onTap: () => print("Google Login"),
+                    ),
                     const SizedBox(width: 20),
-                    _SocialButton(onTap: () {}, child: Image.asset('assets/google_icon.png', width: 24)),
+                    _socialButton(
+                      icon: Icons.apple,
+                      color: Colors.black,
+                      onTap: () => print("Apple Login"),
+                    ),
                     const SizedBox(width: 20),
-                    _SocialButton(onTap: () {}, child: Image.asset('assets/facebook.png', width: 24)),
+                    _socialButton(
+                      icon: Icons.facebook,
+                      color: Colors.blue.shade800,
+                      onTap: () => print("Facebook Login"),
+                    ),
                   ],
                 ),
+                // --- SOCIAL LOGIN SECTION END ---
 
-                const SizedBox(height: 40),
-
-                Center(
-                  child: TextButton(
-                    onPressed: () {},
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                        children: const [
-                          TextSpan(text: "Don't have an account? "),
-                          TextSpan(
-                            text: 'Sign up',
-                            style: TextStyle(color: Color(0xFF2C2C2C), fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Don't have an account?"),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SignupPage())),
+                      child: const Text("Signup",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -221,49 +212,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2.0),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87)),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-      contentPadding: const EdgeInsets.symmetric(vertical: 10),
-      enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2C2C2C), width: 2)),
-    );
-  }
-}
-
-class _SocialButton extends StatelessWidget {
-  final VoidCallback onTap;
-  final Widget child;
-  const _SocialButton({required this.onTap, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-class ForgetPassword extends StatelessWidget {
-  const ForgetPassword({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(), body: const Center(child: Text("Reset Password")));
 }

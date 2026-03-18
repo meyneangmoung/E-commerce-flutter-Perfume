@@ -48,7 +48,7 @@ class GetstartPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const SigninPage(),
+                          builder: (context) => const LoginPage(),
                         ),
                       );
                     },
@@ -60,7 +60,7 @@ class GetstartPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const SignUpScreen (),
+                          builder: (context) => const SignupPage (),
                         ),
                       );
                     },

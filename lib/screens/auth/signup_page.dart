@@ -1,208 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:ecommerce/screens/home/homepage.dart'; 
+import 'package:ecommerce/service/auth_service.dart';
+import 'package:ecommerce/screens/auth/signin_page.dart'; 
+import 'package:ecommerce/screens/home/homepage.dart';
+
 
 void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: SignUpScreen(),
-  ));
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: SignupPage(),
+    ),
+  );
 }
-
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+class _SignupPageState extends State<SignupPage> {
+  final AuthService _authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  // --- SIGN UP LOGIC ---
-  void _handleSignUp() {
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
-    String confirmPassword = _confirmPasswordController.text.trim();
-
-    // 1. Basic Validation
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      _showSnackBar("Please fill in all fields");
-      return;
-    }
-
-    // 2. Password Match Check
-    if (password != confirmPassword) {
-      _showSnackBar("Passwords do not match!");
-      return;
-    }
-
-    // 3. Navigate to Homepage
-    // We use pushAndRemoveUntil so the user can't "go back" to the signup screen
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-      (route) => false,
-    );
-  }
-
-  void _showSnackBar(String message) {
+  void showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 80),
-                const Text(
-                  'Create',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
-                ),
-                const Text(
-                  'your account',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
-                ),
-
-                const SizedBox(height: 50),
-
-                // Email
-                _buildLabel('Email'),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: _inputDecoration('Enter your email'),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Password
-                _buildLabel('Password'),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: _inputDecoration('Enter your password'),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Confirm Password
-                _buildLabel('Confirmed password'),
-                TextField(
-                  controller: _confirmPasswordController,
-                  obscureText: true,
-                  decoration: _inputDecoration('Repeat your password'),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Sign Up Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: _handleSignUp, // Logic added here
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2C2C),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    child: const Text(
-                      'Sign Up',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Social Media Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _SocialButton(onTap: () {}, child: Image.asset('assets/apple.png', width: 28)),
-                    const SizedBox(width: 20),
-                    _SocialButton(onTap: () {}, child: Image.asset('assets/google_icon.png', width: 28)),
-                    const SizedBox(width: 20),
-                    _SocialButton(onTap: () {}, child: Image.asset('assets/facebook.png', width: 28)),
-                  ],
-                ),
-
-                const SizedBox(height: 40),
-
-                Center(
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                      children: [
-                        const TextSpan(text: 'Already have an Account? '),
-                        WidgetSpan(
-                          child: GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: const Text(
-                              'Login',
-                              style: TextStyle(
-                                color: Color(0xFF2C2C2C),
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.redAccent,
       ),
     );
   }
 
-  // Helper to keep code clean
-  Widget _buildLabel(String text) {
-    return Text(text, style: const TextStyle(fontWeight: FontWeight.w500));
+  void navigateToHome() {
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-      enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2C2C2C), width: 2)),
-    );
+  void handleSignup() async {
+    if (_formKey.currentState!.validate()) {
+      String? error = await _authService.signup(
+          nameController.text.trim(), 
+          emailController.text.trim(), 
+          passwordController.text.trim()
+      );
+
+      if (error == null) {
+        navigateToHome();
+      } else {
+        showMessage(error);
+      }
+    }
   }
-}
 
-class _SocialButton extends StatelessWidget {
-  final VoidCallback onTap;
-  final Widget child;
-  const _SocialButton({required this.onTap, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
+  // Helper widget for Social Buttons
+  Widget _socialButton({required IconData icon, required Color color, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(50),
@@ -212,7 +69,157 @@ class _SocialButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.grey.shade300),
         ),
-        child: child,
+        child: Icon(icon, color: color, size: 28),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                const Text(
+                  "Create Account",
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Fill in your details to start shopping",
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+                const SizedBox(height: 30),
+
+                // Input Fields
+                TextFormField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: "Full Name",
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (value) => (value == null || value.isEmpty) ? "Enter your name" : null,
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (value) => (value == null || !value.contains('@')) ? "Enter valid email" : null,
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (value) => (value == null || value.length < 6) ? "6+ characters required" : null,
+                ),
+                const SizedBox(height: 30),
+
+                // Signup Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: handleSignup,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      "Sign Up",
+                      style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 30),
+
+                // --- SOCIAL SIGNUP SECTION ---
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text("Or signup with", style: TextStyle(color: Colors.grey)),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _socialButton(
+                      icon: Icons.g_mobiledata_rounded,
+                      color: Colors.red,
+                      onTap: () {}, // Trigger Google Signup
+                    ),
+                    const SizedBox(width: 20),
+                    _socialButton(
+                      icon: Icons.apple,
+                      color: Colors.black,
+                      onTap: () {}, // Trigger Apple Signup
+                    ),
+                    const SizedBox(width: 20),
+                    _socialButton(
+                      icon: Icons.facebook,
+                      color: Colors.blue.shade800,
+                      onTap: () {}, // Trigger Facebook Signup
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+
+                // Login Footer
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Already have an account?"),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                        );
+                      },
+                      child: const Text(
+                        "Login",
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
