@@ -10,7 +10,6 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-
   // 1. Calculate subtotal for selected items
   double get subtotal => globalCart.value
       .where((item) => item['isSelected'] == true)
@@ -84,7 +83,9 @@ class _CartPageState extends State<CartPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          ],
         ),
         child: Row(
           children: [
@@ -111,8 +112,17 @@ class _CartPageState extends State<CartPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text("\$${item['price'].toStringAsFixed(2)}", style: const TextStyle(color: Colors.black54)),
+                  Text(
+                    item['name'],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Text(
+                    "\$${item['price'].toStringAsFixed(2)}",
+                    style: const TextStyle(color: Colors.black54),
+                  ),
                 ],
               ),
             ),
@@ -120,7 +130,11 @@ class _CartPageState extends State<CartPage> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                    size: 20,
+                  ),
                   onPressed: () => _removeItem(index),
                 ),
                 Row(
@@ -130,7 +144,10 @@ class _CartPageState extends State<CartPage> {
                     }),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text("${item['qty']}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        "${item['qty']}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     _qtyButton(Icons.add, () {
                       setState(() => item['qty']++);
@@ -173,10 +190,17 @@ class _CartPageState extends State<CartPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Total Payable", style: TextStyle(fontSize: 18, color: Colors.black54)),
+              const Text(
+                "Total Payable",
+                style: TextStyle(fontSize: 18, color: Colors.black54),
+              ),
               Text(
                 "\$${subtotal.toStringAsFixed(2)}",
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1A1A2E)),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E),
+                ),
               ),
             ],
           ),
@@ -186,24 +210,48 @@ class _CartPageState extends State<CartPage> {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                if (subtotal > 0) {
+                final selectedItems = globalCart.value
+                    .where((item) => item['isSelected'] == true)
+                    .toList();
+
+                final totalAmount = selectedItems.fold<double>(
+                  0.0,
+                  (sum, item) =>
+                      sum +
+                      ((item['price'] as num).toDouble() *
+                          (item['qty'] as num).toInt()),
+                );
+
+                if (selectedItems.isNotEmpty) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const CheckoutPage(),
+                      builder: (context) => CheckoutPage(
+                        cartItems: selectedItems,
+                        totalAmount: totalAmount,
+                      ),
                     ),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please select at least one item to checkout")),
+                    const SnackBar(
+                      content: Text(
+                        "Please select at least one item to checkout",
+                      ),
+                    ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1A1A2E),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
-              child: const Text("Checkout Now", style: TextStyle(color: Colors.white, fontSize: 18)),
+              child: const Text(
+                "Checkout Now",
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
             ),
           ),
         ],
@@ -219,11 +267,17 @@ class _CartPageState extends State<CartPage> {
         children: [
           Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          const Text("Your cart is empty!", style: TextStyle(color: Colors.grey, fontSize: 18)),
+          const Text(
+            "Your cart is empty!",
+            style: TextStyle(color: Colors.grey, fontSize: 18),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Go Shopping", style: TextStyle(color: Color(0xFF1A1A2E))),
-          )
+            child: const Text(
+              "Go Shopping",
+              style: TextStyle(color: Color(0xFF1A1A2E)),
+            ),
+          ),
         ],
       ),
     );

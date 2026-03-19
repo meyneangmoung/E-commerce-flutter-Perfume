@@ -1,3 +1,4 @@
+import 'package:ecommerce/global_state.dart';
 import 'package:flutter/material.dart';
 import 'package:ecommerce/models/product_model.dart';
 import 'package:ecommerce/widget/product_card.dart';
@@ -9,11 +10,16 @@ import 'package:ecommerce/screens/card/cart_page.dart';
 
 void main() {
   runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
-    ),
+    const MaterialApp(debugShowCheckedModeBanner: false, home: HomeScreen()),
   );
+}
+
+/// USER MODEL
+class User {
+  String name;
+  String profileImage;
+
+  User({required this.name, required this.profileImage});
 }
 
 class HomeScreen extends StatefulWidget {
@@ -24,11 +30,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   int _selectedCategory = 0;
   int _selectedIndex = 0;
 
   TextEditingController searchController = TextEditingController();
+
+  /// Example logged-in user
+  User currentUser = User(name: "Jennie", profileImage: "assets/user.jpg");
 
   /// PRODUCT LIST
   final List<Product> trendingProducts = [
@@ -78,7 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// FILTERED PRODUCTS
   List<Product> filteredProducts = [];
-
   final List<String> categories = ["All", "Men's", "Women's"];
 
   @override
@@ -102,24 +109,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-
             _buildTopBar(),
-
             _buildSearchBar(),
-
             _buildCategoryBar(),
-
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: GridView.builder(
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 14,
                     mainAxisSpacing: 14,
@@ -135,11 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
-
           setState(() {
             _selectedIndex = index;
           });
@@ -147,9 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (index == 1) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const WishlistPage(),
-              ),
+              MaterialPageRoute(builder: (context) => const WishlistPage()),
             );
           }
 
@@ -157,25 +154,25 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const UserAccountScreen(),
+                builder: (context) => UserAccountScreen(
+                  user: currentUser,
+                  onUserUpdated: (updatedUser) {
+                    setState(() {
+                      currentUser = updatedUser;
+                    });
+                  },
+                ),
               ),
             );
           }
         },
-
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
             label: "Wishlist",
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
@@ -187,35 +184,47 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 22,
-            backgroundImage: AssetImage("assets/user.jpg"),
+            backgroundImage: AssetImage(currentUser.profileImage),
           ),
           const SizedBox(width: 10),
-
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text("Good Morning", style: TextStyle(fontSize: 12)),
               Text(
-                "Good Morning",
-                style: TextStyle(fontSize: 12),
-              ),
-              Text(
-                "Jennie",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                currentUser.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-
           const Spacer(),
-
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CartPage(),
+          ValueListenableBuilder<List<Map<String, dynamic>>>(
+            valueListenable: globalCart,
+            builder: (context, cartItems, _) {
+              return Badge(
+                // The badge only shows up if there is at least 1 item
+                isLabelVisible: cartItems.isNotEmpty,
+                label: Text(
+                  '${cartItems.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                backgroundColor: const Color(
+                  0xFF1A1A2E,
+                ), // Matches your primary theme
+                child: IconButton(
+                  icon: const Icon(Icons.shopping_bag_outlined),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CartPage()),
+                    );
+                  },
                 ),
               );
             },
@@ -235,7 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-
         child: TextField(
           controller: searchController,
           onChanged: searchProduct,
@@ -255,18 +263,14 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       child: SizedBox(
         height: 45,
-
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: categories.length,
-
           itemBuilder: (context, index) {
-
             bool isSelected = _selectedCategory == index;
 
             return GestureDetector(
               onTap: () {
-
                 setState(() {
                   _selectedCategory = index;
                 });
@@ -289,29 +293,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
               },
-
               child: Container(
                 margin: const EdgeInsets.only(right: 12),
-
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 25),
-
+                padding: const EdgeInsets.symmetric(horizontal: 25),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF1A1A2E)
-                      : Colors.white,
+                  color: isSelected ? const Color(0xFF1A1A2E) : Colors.white,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(color: Colors.black12),
                 ),
-
                 alignment: Alignment.center,
-
                 child: Text(
                   categories[index],
                   style: TextStyle(
-                    color: isSelected
-                        ? Colors.white
-                        : Colors.black,
+                    color: isSelected ? Colors.white : Colors.black,
                   ),
                 ),
               ),
@@ -321,5 +315,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
 }
